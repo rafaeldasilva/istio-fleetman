@@ -24,6 +24,8 @@ spec:
     - "*" # Copy the value in the gateway hosts - usually a Domain Name
   gateways:
     - ingress-gateway-configuration
+
+  # Canary routing based on weight
   http:
     - route:
         - destination:
@@ -50,8 +52,8 @@ spec:
         status: canary
       name: canary-group
 ---
-# BACKEND CONFIGURATION (staff-service)
 
+# BACKEND CONFIGURATION (staff-service)
 kind: VirtualService
 apiVersion: networking.istio.io/v1alpha3
 metadata:
@@ -59,7 +61,9 @@ metadata:
   namespace: default
 spec:
   hosts:
-    - fleetman-staff-service.default.svc.cluster.local  
+    - fleetman-staff-service.default.svc.cluster.local
+
+  # Route to a mixed group which contains stable and canary pods - There NO canary here
   http:
     - route:
         - destination:
@@ -74,13 +78,15 @@ metadata:
   namespace: default
 spec:
   host: fleetman-staff-service
+
+  # lb do some session persistency on subsequnet connections (stiky) - So besides the round robin, the connection goes to the pod
   trafficPolicy: 
     loadBalancer:
       consistentHash: # Apply stikyness based on          
         httpHeaderName: "x-sticky"
         #useSourceIp: true
   subsets:
-    - labels:   # SELECTOR.
+    - labels: 
         app: staff-service # find pods with label "app equals staff-service" - both canary an stable have"
       name: mixed-group
 
