@@ -1,0 +1,31 @@
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: staff-service-traffic-rules  
+  namespace: default
+spec:
+  hosts:
+    - fleetman-staff-service.default.svc.cluster.local  
+  http:
+    - route:
+        - destination:
+            host: fleetman-staff-service.default.svc.cluster.local 
+            subset: mixed-group  
+          #weight: 100 # If on one ddestination, do not neet weighting
+---
+kind: DestinationRule      
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: staff-service-subsets 
+  namespace: default
+spec:
+  host: fleetman-staff-service
+  trafficPolicy: 
+    loadBalancer:
+      consistentHash: # Apply stikyness based on          
+        httpHeaderName: "x-sticky"
+        #useSourceIp: true
+  subsets:
+    - labels:   # SELECTOR.
+        app: staff-service # find pods with label "app equals staff-service" - both canary an stable have"
+      name: mixed-group

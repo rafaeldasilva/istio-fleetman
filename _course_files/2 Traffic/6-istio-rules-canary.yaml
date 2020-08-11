@@ -1,0 +1,33 @@
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: staff-service-traffic-rules  # "just" a name for this virtualservice
+  namespace: default
+spec:
+  hosts:
+    - fleetman-staff-service.default.svc.cluster.local  # The Service DNS (ie the regular K8S Service) name that we're applying routing rules to.
+  http:
+    - route:
+        - destination:
+            host: fleetman-staff-service.default.svc.cluster.local # The Target DNS name
+            subset: stable-group  # The name defined in the DestinationRule
+          weight: 50
+        - destination:
+            host: fleetman-staff-service.default.svc.cluster.local # The Target DNS name
+            subset: canary-group  # The name defined in the DestinationRule
+          weight: 50
+---
+kind: DestinationRule       # Defining which pods should be part of each subset
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: staff-service-subsets 
+  namespace: default
+spec:
+  host: fleetman-staff-service.default.svc.cluster.local 
+  subsets:
+    - labels:   # SELECTOR.
+        status: stable # find pods with label "status equals stable"
+      name: stable-group
+    - labels:
+        status: canary
+      name: canary-group
