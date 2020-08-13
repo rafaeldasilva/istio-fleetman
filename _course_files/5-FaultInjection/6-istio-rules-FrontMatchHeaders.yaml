@@ -4,7 +4,7 @@ metadata:
   name: ingress-gateway-configuration
 spec:
   selector:
-    istio: ingressgateway # use Istio default gateway implementation
+    istio: ingressgateway
   servers:
   - port:
       number: 80
@@ -16,7 +16,7 @@ spec:
 kind: VirtualService
 apiVersion: networking.istio.io/v1alpha3
 metadata:
-  name: fleetman-webapp
+  name: fleetman-webapp 
   namespace: default
 spec:
   hosts:      # which incoming host are we applying the proxy rules to???
@@ -26,16 +26,16 @@ spec:
   http:
     - match:
       - headers:  # IF
-          my-header:
+          x-bird:
             exact: canary
       route: # THEN
       - destination:
           host: fleetman-webapp
-          subset: experimental
+          subset: canary-group
     - route: # CATCH ALL
       - destination:
           host: fleetman-webapp
-          subset: original
+          subset: stable-group
 ---
 kind: DestinationRule
 apiVersion: networking.istio.io/v1alpha3
@@ -46,9 +46,8 @@ spec:
   host: fleetman-webapp
   subsets:
     - labels:
-        version: original
-      name: original
+        status: stable
+      name: stable-group
     - labels:
-        version: experimental
-      name: experimental
-      
+        status: canary
+      name: canary-group

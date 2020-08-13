@@ -1,0 +1,76 @@
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-vehicle-telemetry
+  namespace: default
+spec:
+  hosts:
+    - fleetman-vehicle-telemetry.default.svc.cluster.local
+  http:
+    # Degrades the service, returning 503 a percentege of time
+    - fault:
+        abort:
+          httpStatus: 503 
+          percentage:
+            value: 0.5 # 5 out of 1000 requests
+      route:
+        - destination:
+            host: fleetman-vehicle-telemetry
+    # Degrades the service, delaying the requests for a fix period, a percentage of time
+    - fault:
+        delay:
+          fixedDelay: 5s
+          percentage:
+            value: 50.5
+      route:
+        - destination:
+            host: fleetman-vehicle-telemetry
+
+# Since this service has only one version there is no need to subsets and DestinationRule
+
+---
+# Introduce fault to fleetman-staff-service - Mix of match heardes and fault
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-staff-service
+  namespace: default
+spec:
+  hosts:
+    - fleetman-staff-service
+  http:
+    # Insert fault only requests directed to canary pod (match header)
+    - match:
+        - headers: 
+            x-bird: # to work the aplication must foward the headers (This test app fowrds all headers starting with "x-")
+              exact: canary
+      fault:
+        abort:
+          httpStatus: 503 
+          percentage:
+            value: 25
+      route:
+        - destination:
+            host: fleetman-staff-service
+            subset: canary-group
+    # Catch all - if there is no header match goes to stable service
+    - route:
+        - destination:
+            host: fleetman-staff-service
+            subset: stable-group
+---
+kind: DestinationRule
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: fleetman-staff-service
+  namespace: default
+spec:
+  host: fleetman-staff-service
+  subsets:
+    - labels:
+        status: stable
+      name: stable-group
+    - labels:
+        status: canary
+      name: canary-group
+

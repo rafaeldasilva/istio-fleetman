@@ -8,22 +8,17 @@ spec:
     - fleetman-staff-service
   http:
     - match:
-        - headers:
-            x-my-header:
+        - headers: # to work the aplication must foward the headers (This test app fowrds all headers starting with "x-")
+            x-bird:
               exact: canary
-      fault:
-        abort:
-          percentage:
-            value: 100.0
-          httpStatus: 418 # BE CAREFUL WITH INDENTATION!
       route:
         - destination:
             host: fleetman-staff-service
-            subset: risky
+            subset: canary-group
     - route:
         - destination:
             host: fleetman-staff-service
-            subset: safe
+            subset: stable-group
 ---
 kind: DestinationRule
 apiVersion: networking.istio.io/v1alpha3
@@ -34,8 +29,8 @@ spec:
   host: fleetman-staff-service
   subsets:
     - labels:
-        version: safe
-      name: safe
+        status: stable
+      name: stable-group
     - labels:
-        version: risky
-      name: risky
+        status: canary
+      name: canary-group
