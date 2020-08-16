@@ -21,7 +21,7 @@ metadata:
   name: fleetman-webapp
   namespace: default
 spec:
-  hosts:      # which incoming host are we applying the proxy rules to???
+  hosts:     
     - "*"
   gateways:
     - ingress-gateway-configuration

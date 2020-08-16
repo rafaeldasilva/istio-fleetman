@@ -1,0 +1,12 @@
+# mTLS traffic within cluster is enabled by DEFAULT on Istio
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: "default"
+  namespace: "istio-system"
+spec:
+  mtls:
+  # If STRICT, external requests will fail because it is not encrypted, local requests will continue working because it is encrypted with Istio TLS certificate.
+  # If PERMISSIVE, will accept requests not encrypted, local request continues encrypted.
+  # Default is PERMISSIVE
+    mode: STRICT

@@ -7,7 +7,7 @@ spec:
     matchLabels:
       app: position-simulator
   replicas: 1
-  template: # template for the pods
+  template: 
     metadata:
       labels:
         app: position-simulator
@@ -30,7 +30,7 @@ spec:
     matchLabels:
       app: position-tracker
   replicas: 1
-  template: # template for the pods
+  template: 
     metadata:
       labels:
         app: position-tracker
@@ -53,7 +53,7 @@ spec:
     matchLabels:
       app: api-gateway
   replicas: 1
-  template: # template for the pods
+  template: 
     metadata:
       labels:
         app: api-gateway
@@ -76,15 +76,42 @@ spec:
     matchLabels:
       app: webapp
   replicas: 1
-  template: # template for the pods
+  template: 
     metadata:
       labels:
         app: webapp
-        version: original
+        version: v1.0.0
+        envronment: production
+        status: stable
     spec:
       containers:
       - name: webapp
         image: richardchesterwood/istio-fleetman-webapp-angular:6
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: production-microservice
+        imagePullPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-canary
+spec:
+  selector:
+    matchLabels:
+      app: webapp
+  replicas: 1
+  template: 
+    metadata:
+      labels:
+        app: webapp
+        version: v1.0.1
+        envronment: production
+        status: canary
+    spec:
+      containers:
+      - name: webapp
+        image: richardchesterwood/istio-fleetman-webapp-angular:6-experimental
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: production-microservice
@@ -99,7 +126,7 @@ spec:
     matchLabels:
       app: vehicle-telemetry
   replicas: 1
-  template: # template for the pods
+  template: 
     metadata:
       labels:
         app: vehicle-telemetry
@@ -121,11 +148,13 @@ spec:
     matchLabels:
       app: staff-service
   replicas: 1
-  template: # template for the pods
+  template: 
     metadata:
       labels:
         app: staff-service
-        version: safe
+        version: v1.0.0
+        envronment: production
+        status: stable
     spec:
       containers:
       - name: staff-service
@@ -140,21 +169,23 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: staff-service-risky-version
+  name: staff-service-canary
 spec:
   selector:
     matchLabels:
       app: staff-service
   replicas: 1
-  template: # template for the pods
+  template: 
     metadata:
       labels:
         app: staff-service
-        version: risky
+        version: v1.0.1
+        envronment: production
+        status: canary
     spec:
       containers:
       - name: staff-service
-        image: richardchesterwood/istio-fleetman-staff-service:6-bad
+        image: richardchesterwood/istio-fleetman-staff-service:6
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: production-microservice
@@ -167,9 +198,6 @@ kind: Service
 metadata:
   name: fleetman-webapp
 spec:
-  # This defines which pods are going to be represented by this Service
-  # The service becomes a network endpoint for either other services
-  # or maybe external users to connect to (eg browser)
   selector:
     app: webapp
   ports:
@@ -177,21 +205,19 @@ spec:
       port: 80
   type: ClusterIP
 ---
+# Changed to NodePort type and set nodePort 32000 to test mTLS.
 apiVersion: v1
 kind: Service
 metadata:
   name: fleetman-position-tracker
-
 spec:
-  # This defines which pods are going to be represented by this Service
-  # The service becomes a network endpoint for either other services
-  # or maybe external users to connect to (eg browser)
   selector:
     app: position-tracker
   ports:
     - name: http
       port: 8080
-  type: ClusterIP
+      nodePort: 32000
+  type: NodePort
 ---
 apiVersion: v1
 kind: Service

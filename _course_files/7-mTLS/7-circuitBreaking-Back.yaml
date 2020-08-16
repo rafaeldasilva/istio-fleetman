@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: circuit-breaker-for-the-entire-default-namespace
+spec:
+  host: "fleetman-staff-service.default.svc.cluster.local"          # This is the name of the k8s service that we're configuring
+
+  trafficPolicy:
+    outlierDetection:             # Circuit Breakers HAVE TO BE SWITCHED ON
+      maxEjectionPercent: 100     # Maximum % of hosts in the load balancing pool for the upstream service that can be ejected
+      consecutive5xxErrors: 5     # upstream host is accessed over an opaque TCP connection, connect timeouts, connection error/failure and request failure events qualify as a 5xx error
+      consecutiveGatewayErrors: 3 # When the upstream host is accessed over H  TTP, a 502, 503, or 504 return code qualifies as a gateway erro
+      interval: 10s               # host will remain ejected for a period 
+      baseEjectionTime: 30s       # a host will remain ejected for a period 
